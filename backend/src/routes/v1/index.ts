@@ -1,21 +1,10 @@
 import { Router } from "express";
-import { env } from "../../config/env";
-import healthRoutes from "./health";
+import healthRouter from "./health";
+import gatewayRouter from "../../modules/gateway/gateway.route";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Welcome to PulseRoute API",
-    data: {
-      name: env.APP_NAME,
-      version: env.APP_VERSION,
-      environment: env.NODE_ENV
-    }
-  });
-});
-
-router.use("/health", healthRoutes);
+router.use("/health", healthRouter);
+router.use("/gateway", gatewayRouter);
 
 export default router;

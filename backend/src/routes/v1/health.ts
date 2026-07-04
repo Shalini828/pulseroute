@@ -7,7 +7,7 @@ router.get("/", (req, res) => {
     success: true,
     status: "healthy",
     uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
