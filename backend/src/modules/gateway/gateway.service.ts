@@ -1,5 +1,8 @@
 import { GatewayRequest, GatewayResponse } from "./gateway.types";
+import { FallbackGateway } from "./providers/fallback.gateway";
 import { ProviderFactory } from "./providers/provider.factory";
+import { ProviderHealthService } from "./providers/provider.health";
+import { FallbackService } from "./providers/fallback.service";
 
 /**
  * Handles all business logic for the API Gateway.
@@ -9,26 +12,31 @@ import { ProviderFactory } from "./providers/provider.factory";
  * and return responses.
  */
 export class GatewayService {
-  /**
-   * Factory used to resolve the appropriate provider implementation.
-   */
   private readonly providerFactory = new ProviderFactory();
+  private readonly providerHealth = new ProviderHealthService();
+  private readonly fallbackService = new FallbackService(this.providerFactory);
+  private readonly fallbackGateway = new FallbackGateway(
+    this.providerHealth,
+    this.fallbackService,
+  );
 
   /**
-   * Processes an incoming gateway request and routes it to the selected provider.
+   * Processes an incoming gateway request and routes it through the fallback gateway.
    */
   public async processRequest(
     request: GatewayRequest,
   ): Promise<GatewayResponse> {
-    const provider = this.providerFactory.getProvider(request.provider);
-    const response = await provider.generate({
-      prompt: request.prompt,
-    });
+    const result = await this.fallbackGateway.generate(
+      request.provider,
+      request.prompt,
+    );
 
     return {
       success: true,
-      provider: provider.name,
-      data: response,
+      provider: request.provider,
+      data: {
+        text: result,
+      },
       timestamp: new Date().toISOString(),
     };
   }
