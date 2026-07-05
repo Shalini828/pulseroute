@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { GatewayController } from "./gateway.controller";
+import { validateGatewayRequest } from "./gateway.validation";
 
 /**
  * Defines the HTTP routes for the Gateway module.
@@ -17,7 +18,8 @@ const gatewayController = new GatewayController();
  */
 gatewayRouter.post(
   "/",
-  gatewayController.handleRequest.bind(gatewayController)
+  validateGatewayRequest,
+  gatewayController.handleRequest.bind(gatewayController),
 );
 
 export default gatewayRouter;

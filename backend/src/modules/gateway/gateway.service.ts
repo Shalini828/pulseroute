@@ -1,7 +1,5 @@
-import {
-  GatewayRequest,
-  GatewayResponse,
-} from "./gateway.types";
+import { GatewayRequest, GatewayResponse } from "./gateway.types";
+import { ProviderFactory } from "./providers/provider.factory";
 
 /**
  * Handles all business logic for the API Gateway.
@@ -12,45 +10,26 @@ import {
  */
 export class GatewayService {
   /**
-   * Processes an incoming gateway request.
-   * Currently returns a mock response.
-   * Later this method will route requests to
-   * OpenAI, Gemini, Groq, Anthropic, etc.
+   * Factory used to resolve the appropriate provider implementation.
    */
-  public processRequest(request: GatewayRequest): GatewayResponse {
-    const provider = this.normalizeProvider(request.provider);
+  private readonly providerFactory = new ProviderFactory();
+
+  /**
+   * Processes an incoming gateway request and routes it to the selected provider.
+   */
+  public async processRequest(
+    request: GatewayRequest,
+  ): Promise<GatewayResponse> {
+    const provider = this.providerFactory.getProvider(request.provider);
+    const response = await provider.generate({
+      prompt: request.prompt,
+    });
 
     return {
       success: true,
-      provider,
-      data: {
-        text: this.buildMockResponse(provider, request.prompt),
-      },
+      provider: provider.name,
+      data: response,
       timestamp: new Date().toISOString(),
     };
-  }
-
-  /**
-   * Normalizes provider names.
-   *
-   * Example:
-   * OpenAI -> openai
-   * OPENAI -> openai
-   */
-  private normalizeProvider(provider: string): string {
-    return provider.trim().toLowerCase();
-  }
-
-  /**
-   * Generates a mock response.
-   *
-   * This will later be replaced by actual
-   * provider integrations.
-   */
-  private buildMockResponse(
-    provider: string,
-    prompt: string
-  ): string {
-    return `Mock response from ${provider} for prompt: "${prompt}"`;
   }
 }
