@@ -4,6 +4,7 @@ import gatewayRouter from "../../modules/gateway/gateway.route";
 import providerRouter from "../../modules/providers/provider.route";
 import metricsRouter from "../../modules/metrics/metrics.route";
 import logsRouter from "../../modules/logs/logs.route";
+import authRouter from "../../modules/auth/auth.routes";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use("/gateway", gatewayRouter);
 router.use("/metrics", metricsRouter);
 router.use("/providers", providerRouter);
 router.use("/logs", logsRouter);
+router.use("/auth", authRouter);
 
 export default router;
