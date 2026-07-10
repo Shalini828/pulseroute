@@ -55,7 +55,9 @@ export class MetricsService {
    * Record a successful request for the given provider and update timings.
    */
   public recordSuccess(provider: string, responseTime: number): void {
-    console.log("recordSuccess called", provider, responseTime);
+    console.log(">>> recordSuccess called", provider, responseTime);
+    console.log(">>> Before:", this.getMetrics());
+
     const key = provider.trim().toLowerCase();
     const m = this.metrics.get(key);
     if (!m) return;
@@ -67,8 +69,10 @@ export class MetricsService {
       m.successfulRequests > 0 ? m.totalResponseTime / m.successfulRequests : 0;
 
     this.metrics.set(key, { ...m });
-  }
 
+    console.log(">>> After:", this.getMetrics());
+  }
+  
   /**
    * Record a failed request for the given provider.
    */
