@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
 
   gatewayRequests GatewayRequest[]
+  projects        Project[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -28,7 +29,7 @@ model GatewayRequest {
   createdAt    DateTime @default(now())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Log {
@@ -38,4 +39,49 @@ model Log {
   message      String
   responseTime Int
   timestamp    DateTime @default(now())
+}
+
+model Project {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKeys ApiKey[]
+  providers Provider[]
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model ApiKey {
+  id        String   @id @default(cuid())
+
+  name      String
+  keyHash   String
+  prefix    String
+
+  createdAt DateTime @default(now())
+
+  revoked   Boolean  @default(false)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Provider {
+  id        String   @id @default(cuid())
+
+  name      String
+  baseUrl   String
+  priority  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

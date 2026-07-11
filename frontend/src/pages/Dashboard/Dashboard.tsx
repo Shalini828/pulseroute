@@ -11,46 +11,42 @@ export default function Dashboard() {
   const { metrics, history, providers } = useDashboard();
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const weeklyTraffic = weekDays.map((day) => ({
-  day,
-  requests: history.filter((item: any) => {
-    const requestDay = new Date(item.createdAt).toLocaleDateString("en-US", {
-      weekday: "short",
-    });
+  const weeklyTraffic = weekDays.map((day) => ({
+    day,
+    requests: history.filter((item: any) => {
+      const requestDay = new Date(item.createdAt).toLocaleDateString("en-US", {
+        weekday: "short",
+      });
 
-    return requestDay === day;
-  }).length,
-}));
+      return requestDay === day;
+    }).length,
+  }));
   const totalRequests = metrics.reduce(
-  (sum: number, item: any) => sum + item.totalRequests,
-  0
-);
+    (sum: number, item: any) => sum + item.totalRequests,
+    0,
+  );
 
-const activeMetrics = metrics.filter(
-  (item: any) => item.totalRequests > 0
-);
+  const activeMetrics = metrics.filter((item: any) => item.totalRequests > 0);
 
-const averageLatency =
-  activeMetrics.length > 0
-    ? (
-        activeMetrics.reduce(
-          (sum: number, item: any) =>
-            sum + item.averageResponseTime,
-          0
-        ) / activeMetrics.length
-      ).toFixed(0)
-    : "0";
+  const averageLatency =
+    activeMetrics.length > 0
+      ? (
+          activeMetrics.reduce(
+            (sum: number, item: any) => sum + item.averageResponseTime,
+            0,
+          ) / activeMetrics.length
+        ).toFixed(0)
+      : "0";
 
-const totalSuccessful = metrics.reduce(
-  (sum: number, item: any) =>
-    sum + item.successfulRequests,
-  0
-);
+  const totalSuccessful = metrics.reduce(
+    (sum: number, item: any) => sum + item.successfulRequests,
+    0,
+  );
 
-const availability =
-  totalRequests > 0
-    ? ((totalSuccessful / totalRequests) * 100).toFixed(2)
-    : "100.00";
+  const availability =
+    totalRequests > 0
+      ? ((totalSuccessful / totalRequests) * 100).toFixed(2)
+      : "100.00";
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -95,9 +91,22 @@ const availability =
           <h2 className="text-2xl font-semibold mb-4">Providers</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {providers.map((provider: any) => (
-              <ProviderCard key={provider.name} provider={provider} />
-            ))}
+            {providers.map((provider: any) => {
+              const metric = metrics.find(
+                (m: any) => m.provider === provider.name,
+              );
+
+              return (
+                <ProviderCard
+                  key={provider.name}
+                  provider={{
+                    ...provider,
+                    totalRequests: metric?.totalRequests ?? 0,
+                    averageResponseTime: metric?.averageResponseTime ?? 0,
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -105,7 +114,7 @@ const availability =
         <div className="grid xl:grid-cols-2 gap-6">
           <TrafficChart data={weeklyTraffic} />
 
-<RecentRequests />
+          <RecentRequests />
         </div>
       </div>
     </DashboardLayout>

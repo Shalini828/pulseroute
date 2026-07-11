@@ -27,13 +27,23 @@ export default function RecentRequests() {
     fetchHistory();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-        Loading...
+  
+if (loading) {
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <h2 className="text-xl font-semibold mb-6">Recent Requests</h2>
+
+      <div className="space-y-4">
+        {[1, 2, 3, 4, 5].map((item) => (
+          <div
+            key={item}
+            className="h-10 rounded bg-slate-800 animate-pulse"
+          />
+        ))}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">

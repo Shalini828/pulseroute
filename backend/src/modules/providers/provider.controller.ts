@@ -1,25 +1,43 @@
 import type { Request, Response } from "express";
 import { ProviderService } from "./provider.service";
-import { ProviderInfo } from "../gateway/providers/provider.types";
-
-/**
- * Handles HTTP requests for provider-related operations.
- */
+import type { CreateProviderRequest } from "./provider.types";
 export class ProviderController {
   constructor(private readonly providerService = new ProviderService()) {}
 
-  /**
-   * Returns all configured providers.
-   */
-  public getProviders(
-    _req: Request,
-    res: Response,
-  ): Response<{ success: true; providers: ProviderInfo[] }> {
+  public getProviders(_req: Request, res: Response): Response {
     const providers = this.providerService.getProviders();
 
     return res.status(200).json({
       success: true,
       providers,
+    });
+  }
+
+  public async createProvider(
+    req: Request<{ projectId: string }, unknown, CreateProviderRequest>,
+    res: Response,
+  ): Promise<Response> {
+    if (!req.user?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    console.log("Controller req.params:", req.params);
+    console.log("🚀 CONTROLLER IS RUNNING");
+    console.log(req.params);
+
+    const provider = await this.providerService.createProvider(
+      req.user.userId,
+      req.params.projectId,
+      req.body,
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Provider created successfully.",
+      data: provider,
     });
   }
 }

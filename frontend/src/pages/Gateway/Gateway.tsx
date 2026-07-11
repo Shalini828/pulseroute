@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../services/api";
+import { toast } from "react-toastify";
 
 export default function GatewayPage() {
   const [provider, setProvider] = useState("gemini");
@@ -7,22 +8,24 @@ export default function GatewayPage() {
   const [response, setResponse] = useState("");
 
   const handleSubmit = async () => {
-  console.log("Button clicked");
-  console.log({ provider, prompt });
+    console.log("Button clicked");
+    console.log({ provider, prompt });
 
-  try {
-    const res = await api.post("/gateway", {
-      provider,
-      prompt,
-    });
+    try {
+      const res = await api.post("/gateway", {
+        provider,
+        prompt,
+      });
 
-    console.log("Response:", res.data);
-    setResponse(res.data.data.text);
-    setPrompt("");
-  } catch (err) {
-    console.error("Gateway Error:", err);
-  }
-};
+      console.log("Response:", res.data);
+      setResponse(res.data.data.text);
+      toast.success("Request sent successfully!");
+      setPrompt("");
+    } catch (err) {
+      console.error("Gateway Error:", err);
+      toast.error("Failed to send request.");
+    }
+  };
 
   return (
     <div className="p-6">
@@ -54,16 +57,12 @@ export default function GatewayPage() {
       </button>
 
       {response && (
-  <div className="mt-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
-    <h2 className="text-lg font-semibold mb-2">
-      AI Response
-    </h2>
+        <div className="mt-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
+          <h2 className="text-lg font-semibold mb-2">AI Response</h2>
 
-    <p className="whitespace-pre-wrap text-slate-300">
-      {response}
-    </p>
-  </div>
-)}
+          <p className="whitespace-pre-wrap text-slate-300">{response}</p>
+        </div>
+      )}
     </div>
   );
 }
