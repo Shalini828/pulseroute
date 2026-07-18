@@ -11,17 +11,8 @@ export interface GenerateResponse {
   };
 }
 
-/**
- * Base contract for all AI providers in the gateway.
- */
 export abstract class BaseProvider {
-  /**
-   * Human-readable provider identifier.
-   */
-  abstract readonly name: string;
 
-  /**
-   * Generates a response for the provided prompt.
-   */
+  abstract readonly name: string;
   abstract generate(request: GenerateRequest): Promise<GenerateResponse>;
 }

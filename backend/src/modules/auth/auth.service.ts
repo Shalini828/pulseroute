@@ -8,23 +8,19 @@ import {
   JwtPayload,
 } from "./auth.types";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { PrismaClient } from "../../generated/prisma/index.js";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
 });
+
+const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({
   adapter,
 });
-
-/**
- * In-memory authentication service.
- */
 export class AuthService {
-  /**
-   * Registers a new user.
-   */
   public async register(request: RegisterRequest): Promise<User> {
     const normalizedEmail = request.email.toLowerCase().trim();
 
@@ -46,7 +42,6 @@ export class AuthService {
       },
     });
 
-    // Map Prisma user to local `User` shape
     const user: User = {
       id: created.id,
       name: created.name,
@@ -57,9 +52,6 @@ export class AuthService {
     return user;
   }
 
-  /**
-   * Generates a JWT token for a user.
-   */
   private generateToken(user: User): string {
     const payload: JwtPayload = {
       userId: user.id,
@@ -71,9 +63,6 @@ export class AuthService {
     });
   }
 
-  /**
-   * Authenticates an existing user.
-   */
 public async login(request: LoginRequest): Promise<AuthResponse> {
   console.log("Raw request:", request);
 
@@ -124,9 +113,6 @@ public async login(request: LoginRequest): Promise<AuthResponse> {
   };
 }
 
-  /**
-   * Returns the authenticated user's profile.
-   */
   public async getCurrentUser(userId: string): Promise<{
     id: string;
     name: string;
@@ -152,10 +138,6 @@ public async login(request: LoginRequest): Promise<AuthResponse> {
     return user;
   }
 
-  /**
-   * Returns all registered users.
-   * (Temporary helper until Prisma is integrated.)
-   */
   public async getUsers(): Promise<User[]> {
     const users = await prisma.user.findMany();
 
@@ -168,7 +150,4 @@ public async login(request: LoginRequest): Promise<AuthResponse> {
   }
 }
 
-/**
- * Shared singleton instance.
- */
 export const authService = new AuthService();

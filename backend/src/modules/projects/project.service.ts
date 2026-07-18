@@ -14,13 +14,7 @@ const prisma = new PrismaClient({
   adapter,
 });
 
-/**
- * Handles project-related business logic.
- */
 export class ProjectService {
-  /**
-   * Creates a new project.
-   */
   public async createProject(
     userId: string,
     request: CreateProjectRequest,
@@ -34,9 +28,6 @@ export class ProjectService {
     });
   }
 
-  /**
-   * Returns all projects belonging to a user.
-   */
   public async getProjects(
     userId: string,
   ): Promise<ProjectResponse[]> {
@@ -48,9 +39,7 @@ export class ProjectService {
     });
   }
 
-  /**
- * Returns a single project by ID.
- */
+
 public async getProjectById(
   id: string,
   userId: string,
@@ -69,9 +58,6 @@ public async getProjectById(
   return project;
 }
 
-  /**
-   * Updates a project.
-   */
   public async updateProject(
     id: string,
     userId: string,
@@ -86,9 +72,6 @@ public async getProjectById(
     });
   }
 
-  /**
-   * Deletes a project.
-   */
 public async deleteProject(
   id: string,
   userId: string,
@@ -101,8 +84,6 @@ public async deleteProject(
   });
 }
 }
-/**
- * Shared singleton instance.
- */
+
 export const projectService = new ProjectService();
 

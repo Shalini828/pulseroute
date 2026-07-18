@@ -1,6 +1,7 @@
 export interface GatewayRequest {
   provider: string;
   prompt: string;
+  projectId: string;
 }
 
 export interface GatewayResponse {

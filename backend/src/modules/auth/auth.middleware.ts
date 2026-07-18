@@ -2,9 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { JwtPayload } from "./auth.types";
 
-/**
- * Extend Express Request type to include user payload.
- */
 declare global {
   namespace Express {
     interface Request {
@@ -24,9 +21,6 @@ const isJwtPayload = (value: unknown): value is JwtPayload => {
   );
 };
 
-/**
- * Authentication middleware that verifies JWT tokens.
- */
 export const authenticate = (
   req: Request,
   res: Response,

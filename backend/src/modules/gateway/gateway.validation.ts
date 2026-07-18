@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { gatewayRequestSchema } from "./gateway.schema";
 
-// Validate incoming gateway request bodies before continuing.
 export const validateGatewayRequest = (
   req: Request,
   res: Response,

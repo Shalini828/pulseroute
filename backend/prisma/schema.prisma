@@ -8,16 +8,14 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(cuid())
-  name     String
-  email    String @unique
-  password String
-
+  id              String           @id @default(cuid())
+  name            String
+  email           String           @unique
+  password        String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   gatewayRequests GatewayRequest[]
   projects        Project[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model GatewayRequest {
@@ -27,9 +25,8 @@ model GatewayRequest {
   provider     String
   responseTime Int
   createdAt    DateTime @default(now())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Log {
@@ -42,46 +39,36 @@ model Log {
 }
 
 model Project {
-  id          String  @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   description String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  apiKeys ApiKey[]
-  providers Provider[]
-  
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      String
+  apiKeys     ApiKey[]
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providers   Provider[]
 }
-
 
 model ApiKey {
   id        String   @id @default(cuid())
-
   name      String
   keyHash   String
   prefix    String
-
   createdAt DateTime @default(now())
-
   revoked   Boolean  @default(false)
-
   projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Provider {
   id        String   @id @default(cuid())
-
   name      String
   baseUrl   String
   priority  Int
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  enabled   Boolean  @default(true)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

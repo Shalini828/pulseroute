@@ -16,4 +16,27 @@ providerRouter.post(
   providerController.createProvider.bind(providerController),
 );
 
+providerRouter.get(
+  "/projects/:projectId/providers",
+  authenticate,
+  providerController.getProvidersByProject.bind(providerController),
+);
+
+providerRouter.get(
+  "/:providerId",
+  authenticate,
+  providerController.getProviderById.bind(providerController),
+);
+
+providerRouter.patch(
+  "/:providerId",
+  authenticate,
+  providerController.updateProvider.bind(providerController),
+);
+
+providerRouter.delete(
+  "/:providerId",
+  authenticate,
+  providerController.deleteProvider.bind(providerController),
+);
 export default providerRouter;
