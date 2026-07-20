@@ -5,7 +5,7 @@ import { ProviderHealthService } from "./providers/provider.health";
 import { FallbackService } from "./providers/fallback.service";
 import { metricsService } from "../metrics/metrics.service";
 import { logsService } from "../logs/logs.service";
-import { PrismaClient } from "../../generated/prisma/index.js";
+import { PrismaClient } from "../../generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { RoutingService } from "../routing/routing.service";
 
@@ -26,29 +26,32 @@ export class GatewayService {
     this.providerHealth,
     this.fallbackService,
   );
+
   private readonly metricsService = metricsService;
   private readonly logsService = logsService;
 
   public async processRequest(
-    request: GatewayRequest,
-    userId: string,
+  request: GatewayRequest,
+  projectId: string,
+  userId?: string,
   ): Promise<GatewayResponse> {
     const start = Date.now();
     let selectedProvider = "";
+
     try {
-      const providers = await this.routingService.selectProvider(
-        request.projectId,
-      );
-      console.log("Providers selected:", providers);
+      // Get providers for the project
+      const providers = await this.routingService.selectProvider(projectId);
 
       const providerNames = providers.map((provider) =>
         provider.name.toLowerCase(),
       );
 
+      // Try providers with fallback
       const result = await this.fallbackService.tryProviders(
         providerNames,
         request.prompt,
       );
+
       if (!result.success) {
         throw new Error(result.error ?? "All providers failed.");
       }
@@ -57,13 +60,10 @@ export class GatewayService {
 
       const responseTime = Date.now() - start;
 
-      this.metricsService.recordSuccess(result.provider, responseTime);
+      // Metrics
+      this.metricsService.recordSuccess(selectedProvider, responseTime);
 
-      console.log(
-        "Gateway metrics after update:",
-        this.metricsService.getMetrics(),
-      );
-
+      // Logs
       await this.logsService.addLog(
         "SUCCESS",
         selectedProvider,
@@ -71,32 +71,41 @@ export class GatewayService {
         responseTime,
       );
 
+      // Save history
       await prisma.gatewayRequest.create({
         data: {
-          prompt: request.prompt,
-          response: result.response ?? "",
-          provider: selectedProvider,
-          responseTime,
-          userId,
-        },
+    prompt: request.prompt,
+    response: result.text ?? "",
+    provider: selectedProvider,
+    responseTime,
+    projectId,
+    userId,
+},
       });
 
       return {
         success: true,
         provider: selectedProvider,
         data: {
-          text: result.response ?? "",
+          text: result.text ?? "",
         },
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      this.metricsService.recordFailure(selectedProvider);
+      const responseTime = Date.now() - start;
+
+      if (selectedProvider) {
+        this.metricsService.recordFailure(selectedProvider);
+      }
+
+      const message =
+        error instanceof Error ? error.message : "Unknown error occurred.";
 
       await this.logsService.addLog(
         "ERROR",
-        selectedProvider,
-        "Request failed",
-        0,
+        selectedProvider || "UNKNOWN",
+        message,
+        responseTime,
       );
 
       throw error;
@@ -122,3 +131,5 @@ export class GatewayService {
     });
   }
 }
+
+export const gatewayService = new GatewayService();

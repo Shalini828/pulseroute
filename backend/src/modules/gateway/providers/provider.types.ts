@@ -7,6 +7,6 @@ export interface ProviderInfo {
 export interface FallbackResult {
   provider: string;
   success: boolean;
-  response?: string;
+  text?: string;
   error?: string;
 }

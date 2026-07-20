@@ -7,16 +7,18 @@ import logsRouter from "../../modules/logs/logs.route";
 import authRouter from "../../modules/auth/auth.routes";
 import projectRouter from "../../modules/projects/project.routes";
 import apiKeyRouter from "../../modules/apikeys/apikey.routes";
+import analyticsRouter from "../../modules/analytics/analytics.route";
 
 const router = Router();
 
 router.use("/health", healthRouter);
 router.use("/gateway", gatewayRouter);
+router.use("/analytics", analyticsRouter);
 router.use("/metrics", metricsRouter);
 router.use("/providers", providerRouter);
 router.use("/logs", logsRouter);
 router.use("/auth", authRouter);
 router.use("/projects", projectRouter);
-router.use("/", apiKeyRouter);
+router.use("/projects/:projectId/apikeys", apiKeyRouter);
 
 export default router;

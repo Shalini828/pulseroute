@@ -4,8 +4,7 @@ import { GeminiProvider } from "./gemini.provider";
 import { GroqProvider } from "./groq.provider";
 
 export class ProviderFactory {
-
-  private readonly providers = new Map<string, BaseProvider>([
+  private static readonly providers = new Map<string, BaseProvider>([
     ["openai", new OpenAIProvider()],
     ["gemini", new GeminiProvider()],
     ["groq", new GroqProvider()],
@@ -14,11 +13,13 @@ export class ProviderFactory {
   public getProvider(provider: string): BaseProvider {
     const normalizedProvider = provider.trim().toLowerCase();
 
-    const resolvedProvider = this.providers.get(normalizedProvider);
+    const resolvedProvider =
+      ProviderFactory.providers.get(normalizedProvider);
 
-    if (resolvedProvider) {
-      return resolvedProvider;
+    if (!resolvedProvider) {
+      throw new Error(`Unsupported provider: ${provider}`);
     }
-    throw new Error(`Unsupported provider: ${provider}`);
+
+    return resolvedProvider;
   }
 }

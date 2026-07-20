@@ -1,7 +1,11 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma";
 import crypto from "crypto";
-import { CreateApiKeyRequest } from "./apikey.types";
+import {
+  CreateApiKeyRequest,
+  CreateApiKeyResponse,
+  ApiKeyResponse,
+} from "./apikey.types";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -12,29 +16,21 @@ const prisma = new PrismaClient({
 });
 
 export class ApiKeyService {
-  /**
-   * Generates a secure API key.
-   */
   private generateApiKey(): string {
     return "pr_live_" + crypto.randomBytes(32).toString("hex");
   }
 
-  /**
-   * Hashes the API key before storing it.
-   */
   private hashApiKey(key: string): string {
     return crypto.createHash("sha256").update(key).digest("hex");
   }
 
-  /**
-   * Creates a new API key for a project.
-   */
   public async createApiKey(
     userId: string,
     projectId: string,
     request: CreateApiKeyRequest,
-  ) {
-    // Verify project ownership
+  ): Promise<CreateApiKeyResponse> {
+    console.log("userId:", userId);
+    console.log("projectId:", projectId);
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
@@ -46,40 +42,43 @@ export class ApiKeyService {
       throw new Error("Project not found.");
     }
 
-    // Generate API key
     const apiKey = this.generateApiKey();
 
-    // Hash it
     const keyHash = this.hashApiKey(apiKey);
 
-    // Store only the hash
     const created = await prisma.apiKey.create({
       data: {
         name: request.name,
         keyHash,
-        prefix: apiKey.substring(0, 15),
-        projectId,
+        prefix: apiKey.slice(0, 12),
+        project: {
+          connect: {
+            id: projectId,
+          },
+        },
+      },
+      include: {
+        project: true,
       },
     });
 
-    // Return the plain key ONLY ONCE
     return {
-      id: created.id,
-      name: created.name,
-      prefix: created.prefix,
-      key: apiKey,
-      createdAt: created.createdAt,
+      apiKey,
+      key: {
+        id: created.id,
+        name: created.name,
+        prefix: created.prefix,
+        createdAt: created.createdAt,
+        revoked: created.revoked,
+        projectId: created.projectId,
+      },
     };
   }
 
-  /**
-   * Returns all API keys for a project.
-   */
   public async getApiKeys(
     userId: string,
     projectId: string,
-  ) {
-    // Verify project ownership
+  ): Promise<ApiKeyResponse[]> {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
@@ -91,7 +90,6 @@ export class ApiKeyService {
       throw new Error("Project not found.");
     }
 
-    // Return only metadata (never the real key)
     return prisma.apiKey.findMany({
       where: {
         projectId,
@@ -101,6 +99,8 @@ export class ApiKeyService {
         name: true,
         prefix: true,
         createdAt: true,
+        revoked: true,
+        projectId: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -109,55 +109,105 @@ export class ApiKeyService {
   }
 
   public async revokeApiKey(
-  userId: string,
-  projectId: string,
-  apiKeyId: string,
-) {
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      userId,
-    },
-  });
+    userId: string,
+    projectId: string,
+    apiKeyId: string,
+  ): Promise<ApiKeyResponse> {
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        userId,
+      },
+    });
 
-  if (!project) {
-    throw new Error("Project not found.");
+    if (!project) {
+      throw new Error("Project not found.");
+    }
+
+    const apiKey = await prisma.apiKey.findFirst({
+      where: {
+        id: apiKeyId,
+        projectId,
+      },
+    });
+
+    if (!apiKey) {
+      throw new Error("API key not found.");
+    }
+
+    return prisma.apiKey.update({
+      where: {
+        id: apiKey.id,
+      },
+      data: {
+        revoked: true,
+      },
+    });
   }
 
-  return prisma.apiKey.update({
-    where: {
-      id: apiKeyId,
-    },
-    data: {
-      revoked: true,
-    },
-  });
-}
+  public async deleteApiKey(
+    userId: string,
+    projectId: string,
+    apiKeyId: string,
+  ): Promise<void> {
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        userId,
+      },
+    });
 
+    if (!project) {
+      throw new Error("Project not found.");
+    }
 
-public async deleteApiKey(
-  userId: string,
-  projectId: string,
-  apiKeyId: string,
-) {
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      userId,
-    },
-  });
+    const apiKey = await prisma.apiKey.findFirst({
+      where: {
+        id: apiKeyId,
+        projectId,
+      },
+    });
 
-  if (!project) {
-    throw new Error("Project not found.");
+    if (!apiKey) {
+      throw new Error("API key not found.");
+    }
+
+    await prisma.apiKey.delete({
+      where: {
+        id: apiKey.id,
+      },
+    });
   }
 
-  await prisma.apiKey.delete({
-    where: {
-      id: apiKeyId,
-    },
-  });
-}
+  public async validateApiKey(apiKey: string) {
+    const keyHash = this.hashApiKey(apiKey);
 
+    return prisma.apiKey.findFirst({
+      where: {
+        keyHash,
+        revoked: false,
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            userId: true,
+          },
+        },
+      },
+    });
+  }
+
+  public async getProjectFromApiKey(apiKey: string) {
+    const key = await this.validateApiKey(apiKey);
+
+    if (!key) {
+      throw new Error("Invalid API Key");
+    }
+
+    return key.project;
+  }
 }
 
 export const apiKeyService = new ApiKeyService();

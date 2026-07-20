@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { ProviderController } from "./provider.controller";
+import { providerController } from "./provider.controller";
 import { authenticate } from "../auth/auth.middleware";
 
 const providerRouter = Router();
-const providerController = new ProviderController();
+
 
 providerRouter.get(
-  "/health",
+  "/",
   providerController.getProviders.bind(providerController),
 );
 
@@ -22,21 +22,24 @@ providerRouter.get(
   providerController.getProvidersByProject.bind(providerController),
 );
 
+
 providerRouter.get(
-  "/:providerId",
+  "/projects/:projectId/providers/:providerId",
   authenticate,
   providerController.getProviderById.bind(providerController),
 );
 
 providerRouter.patch(
-  "/:providerId",
+  "/projects/:projectId/providers/:providerId",
   authenticate,
   providerController.updateProvider.bind(providerController),
 );
 
+
 providerRouter.delete(
-  "/:providerId",
+  "/projects/:projectId/providers/:providerId",
   authenticate,
   providerController.deleteProvider.bind(providerController),
 );
+
 export default providerRouter;

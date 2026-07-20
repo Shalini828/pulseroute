@@ -32,39 +32,44 @@ export class ProjectService {
     userId: string,
   ): Promise<ProjectResponse[]> {
     return prisma.project.findMany({
-      where: { userId },
+      where: {
+        userId,
+      },
       orderBy: {
         createdAt: "desc",
       },
     });
   }
 
+  public async getProjectById(
+    id: string,
+    userId: string,
+  ): Promise<ProjectResponse> {
+    const project = await prisma.project.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
 
-public async getProjectById(
-  id: string,
-  userId: string,
-): Promise<ProjectResponse> {
-  const project = await prisma.project.findFirst({
-    where: {
-      id,
-      userId,
-    },
-  });
+    if (!project) {
+      throw new Error("Project not found.");
+    }
 
-  if (!project) {
-    throw new Error("Project not found.");
+    return project;
   }
-
-  return project;
-}
 
   public async updateProject(
     id: string,
     userId: string,
     request: UpdateProjectRequest,
   ): Promise<ProjectResponse> {
+    const project = await this.getProjectById(id, userId);
+
     return prisma.project.update({
-      where: { id },
+      where: {
+        id: project.id,
+      },
       data: {
         name: request.name,
         description: request.description,
@@ -72,18 +77,18 @@ public async getProjectById(
     });
   }
 
-public async deleteProject(
-  id: string,
-  userId: string,
-): Promise<void> {
-  await prisma.project.delete({
-    where: {
-      id,
-      userId,
-    },
-  });
-}
+  public async deleteProject(
+    id: string,
+    userId: string,
+  ): Promise<void> {
+    const project = await this.getProjectById(id, userId);
+
+    await prisma.project.delete({
+      where: {
+        id: project.id,
+      },
+    });
+  }
 }
 
 export const projectService = new ProjectService();
-

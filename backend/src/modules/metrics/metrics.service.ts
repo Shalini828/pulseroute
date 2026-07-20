@@ -1,9 +1,4 @@
 import { ProviderMetrics } from "./metrics.types";
-
-/**
- * In-memory metrics collection for AI providers.
- * Stores counters and response time aggregates for each provider.
- */
 export class MetricsService {
   private readonly metrics = new Map<string, ProviderMetrics>();
 
@@ -44,16 +39,10 @@ export class MetricsService {
     }
   }
 
-  /**
-   * Returns all provider metrics as an array.
-   */
   public getMetrics(): ProviderMetrics[] {
     return Array.from(this.metrics.values()).map((m) => ({ ...m }));
   }
 
-  /**
-   * Record a successful request for the given provider and update timings.
-   */
   public recordSuccess(provider: string, responseTime: number): void {
     console.log(">>> recordSuccess called", provider, responseTime);
     console.log(">>> Before:", this.getMetrics());
@@ -72,10 +61,7 @@ export class MetricsService {
 
     console.log(">>> After:", this.getMetrics());
   }
-  
-  /**
-   * Record a failed request for the given provider.
-   */
+
   public recordFailure(provider: string): void {
     const key = provider.trim().toLowerCase();
     const m = this.metrics.get(key);
@@ -88,7 +74,4 @@ export class MetricsService {
   }
 }
 
-/**
- * Shared singleton instance.
- */
 export const metricsService = new MetricsService();

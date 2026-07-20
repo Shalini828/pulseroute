@@ -21,7 +21,7 @@ export default function History() {
     const fetchHistory = async () => {
       try {
         const res = await api.get("/gateway/history");
-        setHistory(res.data.history);
+        setHistory(res.data.data || []);
       } catch (err) {
         console.error(err);
       }

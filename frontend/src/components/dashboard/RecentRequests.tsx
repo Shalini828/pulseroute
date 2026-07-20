@@ -1,53 +1,20 @@
-import { useEffect, useState } from "react";
-import api from "../../services/api";
-
-interface Request {
-  id: string;
+interface RecentRequest {
   provider: string;
   prompt: string;
   responseTime: number;
+  createdAt: string;
 }
 
-export default function RecentRequests() {
-  const [rows, setRows] = useState<Request[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await api.get("/gateway/history");
-        setRows((res.data.history || []).slice(0, 5));
-      } catch (err) {
-        console.error("Failed to fetch history", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistory();
-  }, []);
-
-  
-if (loading) {
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-      <h2 className="text-xl font-semibold mb-6">Recent Requests</h2>
-
-      <div className="space-y-4">
-        {[1, 2, 3, 4, 5].map((item) => (
-          <div
-            key={item}
-            className="h-10 rounded bg-slate-800 animate-pulse"
-          />
-        ))}
-      </div>
-    </div>
-  );
+interface Props {
+  rows: RecentRequest[];
 }
 
+export default function RecentRequests({ rows }: Props) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-      <h2 className="text-xl font-semibold mb-6">Recent Requests</h2>
+      <h2 className="text-xl font-semibold mb-6">
+        Recent Requests
+      </h2>
 
       <table className="w-full">
         <thead>
@@ -61,16 +28,26 @@ if (loading) {
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={3} className="text-center py-6 text-slate-400">
+              <td
+                colSpan={3}
+                className="text-center py-6 text-slate-400"
+              >
                 No requests yet.
               </td>
             </tr>
           ) : (
-            rows.slice(0, 5).map((row) => (
-              <tr key={row.id} className="border-b border-slate-800">
-                <td className="py-4 capitalize">{row.provider}</td>
+            rows.map((row, index) => (
+              <tr
+                key={`${row.provider}-${row.createdAt}-${index}`}
+                className="border-b border-slate-800"
+              >
+                <td className="py-4 capitalize">
+                  {row.provider}
+                </td>
 
-                <td>{row.prompt}</td>
+                <td className="max-w-xs truncate">
+                  {row.prompt}
+                </td>
 
                 <td>{row.responseTime} ms</td>
               </tr>

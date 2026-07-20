@@ -10,3 +10,7 @@ export interface ApiKeyResponse {
   revoked: boolean;
   projectId: string;
 }
+export interface CreateApiKeyResponse {
+  apiKey: string;
+  key: ApiKeyResponse;
+}

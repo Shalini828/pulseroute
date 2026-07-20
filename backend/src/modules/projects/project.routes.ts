@@ -1,51 +1,43 @@
 import { Router } from "express";
-import { ProjectController } from "./project.controller";
+import { projectController } from "./project.controller";
 import { authenticate } from "../auth/auth.middleware";
 import apiKeyRouter from "../apikeys/apikey.routes";
 
 const router = Router();
-const controller = new ProjectController();
 
-/**
- * POST /projects
- */
 router.post(
   "/",
   authenticate,
-  controller.createProject.bind(controller),
+  projectController.createProject.bind(projectController),
 );
 
-/**
- * GET /projects
- */
 router.get(
   "/",
   authenticate,
-  controller.getProjects.bind(controller),
+  projectController.getProjects.bind(projectController),
 );
 
 router.get(
   "/:id",
   authenticate,
-  controller.getProjectById.bind(controller),
+  projectController.getProjectById.bind(projectController),
 );
 
-/**
- * PATCH /projects/:id
- */
 router.patch(
   "/:id",
   authenticate,
-  controller.updateProject.bind(controller),
+  projectController.updateProject.bind(projectController),
 );
+
 router.delete(
   "/:id",
   authenticate,
-  controller.deleteProject.bind(controller),
+  projectController.deleteProject.bind(projectController),
 );
 
 router.use(
   "/:projectId/apikeys",
   apiKeyRouter,
 );
+
 export default router;

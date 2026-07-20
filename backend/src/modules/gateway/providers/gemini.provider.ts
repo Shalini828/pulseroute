@@ -1,4 +1,4 @@
-import { gemini } from "../../../config/gemini";
+import { GoogleGenAI } from "@google/genai";
 import {
   BaseProvider,
   GenerateRequest,
@@ -8,29 +8,20 @@ import {
 export class GeminiProvider extends BaseProvider {
   readonly name = "gemini";
 
-  // async generate(
-  //   request: GenerateRequest,
-  // ): Promise<GenerateResponse> {
-  //   try {
-  //     const response = await gemini.models.generateContent({
-  //       model: "gemini-2.5-flash",
-  //       contents: request.prompt,
-  //     });
-
-  //     return {
-  //       text: response.text ?? "",
-  //     };
-  //   } catch (err: unknown) {
-  //     const message =
-  //       err instanceof Error ? err.message : String(err);
-
-  //     throw new Error(`Gemini API request failed: ${message}`);
-  //   }
-  // }
+  private readonly ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY!,
+  });
 
   async generate(
-  request: GenerateRequest,
-): Promise<GenerateResponse> {
-  throw new Error("503 Service Unavailable");
-}
+    request: GenerateRequest,
+  ): Promise<GenerateResponse> {
+    const response = await this.ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: request.prompt,
+    });
+
+    return {
+       text: response.text ?? "",
+    };
+  }
 }

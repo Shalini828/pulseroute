@@ -4,8 +4,8 @@ export interface CircuitState {
 }
 
 export class CircuitBreakerService {
-  private readonly maxFailures = 3;
-  private readonly resetTimeout = 30000;
+  private static readonly MAX_FAILURES = 3;
+  private static readonly RESET_TIMEOUT = 30_000;
 
   private readonly circuits = new Map<string, CircuitState>();
 
@@ -15,7 +15,9 @@ export class CircuitBreakerService {
 
     state.failures++;
 
-    if (state.failures >= this.maxFailures) {
+    if (
+      state.failures >= CircuitBreakerService.MAX_FAILURES
+    ) {
       state.openedAt = Date.now();
     }
 
@@ -26,24 +28,26 @@ export class CircuitBreakerService {
     this.circuits.delete(provider);
   }
 
-public isOpen(provider: string): boolean {
-  const state = this.circuits.get(provider);
+  public isOpen(provider: string): boolean {
+    const state = this.circuits.get(provider);
 
-  if (!state) {
-    return false;
+    if (!state) {
+      return false;
+    }
+
+    if (!state.openedAt) {
+      return false;
+    }
+
+    const elapsed = Date.now() - state.openedAt;
+
+    if (
+      elapsed >= CircuitBreakerService.RESET_TIMEOUT
+    ) {
+      this.circuits.delete(provider);
+      return false;
+    }
+
+    return true;
   }
-
-  if (!state.openedAt) {
-    return false;
-  }
-
-  const elapsed = Date.now() - state.openedAt;
-
-  if (elapsed >= this.resetTimeout) {
-    this.circuits.delete(provider);
-    return false;
-  }
-
-  return true;
-}
 }

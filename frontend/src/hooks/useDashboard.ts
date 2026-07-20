@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  getHistory,
-  getMetrics,
-  getProviders,
+  getOverview,
+  getProviderAnalytics,
+  getDailyAnalytics,
+  getRecentRequests,
 } from "../services/dashboard.service";
 
 interface Metric {
@@ -31,19 +32,24 @@ interface Provider {
 }
 
 export default function useDashboard() {
-const [metrics, setMetrics] = useState<Metric[]>([]);
-const [history, setHistory] = useState<HistoryItem[]>([]);
-const [providers, setProviders] = useState<Provider[]>([]);
+
+const [overview, setOverview] = useState<any>(null);
+const [providerAnalytics, setProviderAnalytics] = useState<any[]>([]);
+const [dailyAnalytics, setDailyAnalytics] = useState<any[]>([]);
+const [recentRequests, setRecentRequests] = useState<any[]>([]);
+
 useEffect(() => {
   async function load() {
     try {
-      const metricsData = await getMetrics();
-      const historyData = await getHistory();
-      const providersData = await getProviders();
+  const overviewData = await getOverview();
+const providerData = await getProviderAnalytics();
+const dailyData = await getDailyAnalytics();
+const recentData = await getRecentRequests();
 
-      setMetrics(metricsData.metrics);
-      setHistory(historyData.history);
-      setProviders(providersData.providers);
+setOverview(overviewData.data);
+setProviderAnalytics(providerData.data);
+setDailyAnalytics(dailyData.data);
+setRecentRequests(recentData.data);
     } catch (err) {
       console.error(err);
     }
@@ -51,15 +57,15 @@ useEffect(() => {
 
   load();
   
-
   const interval = setInterval(load, 5000);
 
   return () => clearInterval(interval);
 }, []);
 
-  return {
-    metrics,
-    history,
-    providers,
-  };
+ return {
+  overview,
+  providerAnalytics,
+  dailyAnalytics,
+  recentRequests,
+};
 }

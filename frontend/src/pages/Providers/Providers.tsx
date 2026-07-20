@@ -15,7 +15,7 @@ export default function Providers() {
     async function loadProviders() {
       try {
         const res = await getProviders();
-        setProviders(res.providers || []);
+        setProviders(res.data || []);
       } catch (err) {
         console.error(err);
       }

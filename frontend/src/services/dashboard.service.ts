@@ -11,7 +11,27 @@ export const getHistory = async () => {
 };
 
 export const getProviders = async () => {
-  const res = await api.get("/providers/health");
+  const res = await api.get("/providers");
+  return res.data;
+};
+
+export const getOverview = async () => {
+  const res = await api.get("/analytics/overview");
+  return res.data;
+};
+
+export const getProviderAnalytics = async () => {
+  const res = await api.get("/analytics/providers");
+  return res.data;
+};
+
+export const getDailyAnalytics = async () => {
+  const res = await api.get("/analytics/daily");
+  return res.data;
+};
+
+export const getRecentRequests = async () => {
+  const res = await api.get("/analytics/recent");
   return res.data;
 };
 

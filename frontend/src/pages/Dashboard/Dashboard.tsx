@@ -8,45 +8,8 @@ import useDashboard from "../../hooks/useDashboard";
 import { FolderKanban, Activity, Timer, ShieldCheck } from "lucide-react";
 
 export default function Dashboard() {
-  const { metrics, history, providers } = useDashboard();
-  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-  const weeklyTraffic = weekDays.map((day) => ({
-    day,
-    requests: history.filter((item: any) => {
-      const requestDay = new Date(item.createdAt).toLocaleDateString("en-US", {
-        weekday: "short",
-      });
-
-      return requestDay === day;
-    }).length,
-  }));
-  const totalRequests = metrics.reduce(
-    (sum: number, item: any) => sum + item.totalRequests,
-    0,
-  );
-
-  const activeMetrics = metrics.filter((item: any) => item.totalRequests > 0);
-
-  const averageLatency =
-    activeMetrics.length > 0
-      ? (
-          activeMetrics.reduce(
-            (sum: number, item: any) => sum + item.averageResponseTime,
-            0,
-          ) / activeMetrics.length
-        ).toFixed(0)
-      : "0";
-
-  const totalSuccessful = metrics.reduce(
-    (sum: number, item: any) => sum + item.successfulRequests,
-    0,
-  );
-
-  const availability =
-    totalRequests > 0
-      ? ((totalSuccessful / totalRequests) * 100).toFixed(2)
-      : "100.00";
+  const { overview, providerAnalytics, dailyAnalytics, recentRequests } =
+    useDashboard();
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -63,25 +26,32 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <StatCard
             title="Providers"
-            value={providers.length.toString()}
+            value={overview?.activeProviders?.toString() ?? "0"}
             icon={FolderKanban}
           />
 
           <StatCard
             title="Requests"
-            value={totalRequests.toString()}
+            value={overview?.totalRequests?.toString() ?? "0"}
             icon={Activity}
           />
 
           <StatCard
             title="Average Latency"
-            value={`${averageLatency} ms`}
+            value={`${Math.round(overview?.averageResponseTime ?? 0)} ms`}
             icon={Timer}
           />
 
           <StatCard
             title="Availability"
-            value={`${availability}%`}
+            value={
+              overview && overview.totalRequests > 0
+                ? `${(
+                    (overview.successfulRequests / overview.totalRequests) *
+                    100
+                  ).toFixed(2)}%`
+                : "100%"
+            }
             icon={ShieldCheck}
           />
         </div>
@@ -91,20 +61,9 @@ export default function Dashboard() {
           <h2 className="text-2xl font-semibold mb-4">Providers</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {providers.map((provider: any) => {
-              const metric = metrics.find(
-                (m: any) => m.provider === provider.name,
-              );
-
+            {providerAnalytics.map((provider: any) => {
               return (
-                <ProviderCard
-                  key={provider.name}
-                  provider={{
-                    ...provider,
-                    totalRequests: metric?.totalRequests ?? 0,
-                    averageResponseTime: metric?.averageResponseTime ?? 0,
-                  }}
-                />
+                <ProviderCard key={provider.provider} provider={provider} />
               );
             })}
           </div>
@@ -112,9 +71,8 @@ export default function Dashboard() {
 
         {/* Bottom */}
         <div className="grid xl:grid-cols-2 gap-6">
-          <TrafficChart data={weeklyTraffic} />
-
-          <RecentRequests />
+          <TrafficChart data={dailyAnalytics} />
+          <RecentRequests rows={recentRequests.slice(0, 5)} />
         </div>
       </div>
     </DashboardLayout>

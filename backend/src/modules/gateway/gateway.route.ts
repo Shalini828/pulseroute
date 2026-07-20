@@ -1,11 +1,10 @@
 import { Router } from "express";
-import { GatewayController } from "./gateway.controller";
+import { gatewayController } from "./gateway.controller";
 import { validateGatewayRequest } from "./gateway.validation";
 import { authenticate } from "../auth/auth.middleware";
+import { authenticateApiKey } from "../apikeys/apikey.middleware";
 
 const gatewayRouter = Router();
-
-const gatewayController = new GatewayController();
 
 gatewayRouter.get(
   "/history",
@@ -15,7 +14,7 @@ gatewayRouter.get(
 
 gatewayRouter.post(
   "/",
-  authenticate,
+  authenticateApiKey,
   validateGatewayRequest,
   gatewayController.handleRequest.bind(gatewayController),
 );

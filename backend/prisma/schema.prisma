@@ -25,8 +25,11 @@ model GatewayRequest {
   provider     String
   responseTime Int
   createdAt    DateTime @default(now())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User?   @relation(fields: [userId], references: [id])
+  userId    String?
 }
 
 model Log {
@@ -39,15 +42,18 @@ model Log {
 }
 
 model Project {
-  id          String     @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   userId      String
-  apiKeys     ApiKey[]
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providers   Provider[]
+
+  apiKeys         ApiKey[]
+  providers       Provider[]
+  gatewayRequests GatewayRequest[] // <-- add this
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ApiKey {
@@ -62,13 +68,17 @@ model ApiKey {
 }
 
 model Provider {
-  id        String   @id @default(cuid())
-  name      String
-  baseUrl   String
-  priority  Int
+  id       String  @id @default(cuid())
+  name     String
+  apiKey   String
+  model    String
+  baseUrl  String
+  priority Int
+  enabled  Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   projectId String
-  enabled   Boolean  @default(true)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

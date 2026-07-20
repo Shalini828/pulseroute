@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const gatewayRequestSchema = z.object({
-  projectId: z.string().trim().min(1, "Project ID is required"),
   prompt: z.string().trim().min(1, "Prompt is required"),
 });
 

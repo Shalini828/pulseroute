@@ -6,9 +6,6 @@ import type {
 } from "./project.types";
 
 export class ProjectController {
-  /**
-   * Create a new project.
-   */
   public async createProject(
     req: Request<unknown, unknown, CreateProjectRequest>,
     res: Response,
@@ -32,9 +29,6 @@ export class ProjectController {
     });
   }
 
-  /**
-   * Get all projects of current user.
-   */
   public async getProjects(
     req: Request,
     res: Response,
@@ -57,73 +51,72 @@ export class ProjectController {
   }
 
   public async getProjectById(
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<Response> {
-  if (!req.user?.userId) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required.",
+    req: Request<{ id: string }>,
+    res: Response,
+  ): Promise<Response> {
+    if (!req.user?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const project = await projectService.getProjectById(
+      req.params.id,
+      req.user.userId,
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: project,
     });
   }
 
-  const project = await projectService.getProjectById(
-    req.params.id,
-    req.user.userId,
-  );
+  public async updateProject(
+    req: Request<{ id: string }, unknown, UpdateProjectRequest>,
+    res: Response,
+  ): Promise<Response> {
+    if (!req.user?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
 
-  return res.status(200).json({
-    success: true,
-    data: project,
-  });
-}
+    const project = await projectService.updateProject(
+      req.params.id,
+      req.user.userId,
+      req.body,
+    );
 
-/**
- * Update a project.
- */
-public async updateProject(
-  req: Request<{ id: string }, unknown, UpdateProjectRequest>,
-  res: Response,
-): Promise<Response> {
-  if (!req.user?.userId) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required.",
+    return res.status(200).json({
+      success: true,
+      message: "Project updated successfully.",
+      data: project,
     });
   }
 
-  const project = await projectService.updateProject(
-    req.params.id,
-    req.user.userId,
-    req.body,
-  );
+  public async deleteProject(
+    req: Request<{ id: string }>,
+    res: Response,
+  ): Promise<Response> {
+    if (!req.user?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
 
-  return res.status(200).json({
-    success: true,
-    message: "Project updated successfully.",
-    data: project,
-  });
-}
+    await projectService.deleteProject(
+      req.params.id,
+      req.user.userId,
+    );
 
-public async deleteProject(
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<Response> {
-  if (!req.user?.userId) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required.",
+    return res.status(200).json({
+      success: true,
+      message: "Project deleted successfully.",
     });
   }
-
-  await projectService.deleteProject(
-    req.params.id,
-    req.user.userId,
-  );
-
-  return res.status(200).json({
-    success: true,
-    message: "Project deleted successfully.",
-  });
 }
-}
+
+export const projectController = new ProjectController();

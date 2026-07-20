@@ -1,35 +1,33 @@
 import { Router } from "express";
-import { ApiKeyController } from "./apikey.controller";
+import { apiKeyController } from "./apikey.controller";
 import { authenticate } from "../auth/auth.middleware";
 
-const router = Router();
-const controller = new ApiKeyController();
+const router = Router({
+  mergeParams: true,
+});
 
-/**
- * POST /projects/:projectId/apikeys
- */
 router.post(
-  "/projects/:projectId/apikeys",
+  "/",
   authenticate,
-  controller.createApiKey.bind(controller),
+  apiKeyController.createApiKey.bind(apiKeyController),
 );
 
 router.get(
-  "/projects/:projectId/apikeys",
+  "/",
   authenticate,
-  controller.getApiKeys.bind(controller),
+  apiKeyController.getApiKeys.bind(apiKeyController),
 );
 
 router.patch(
   "/:apiKeyId/revoke",
   authenticate,
-  controller.revokeApiKey.bind(controller),
+  apiKeyController.revokeApiKey.bind(apiKeyController),
 );
 
 router.delete(
   "/:apiKeyId",
   authenticate,
-  controller.deleteApiKey.bind(controller),
+  apiKeyController.deleteApiKey.bind(apiKeyController),
 );
 
 export default router;

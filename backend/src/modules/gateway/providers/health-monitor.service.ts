@@ -23,6 +23,8 @@ export class HealthMonitorService {
   }
 
   public getAll(): ProviderHealth[] {
-    return [...this.health.values()];
+    return [...this.health.values()].map((provider) => ({
+      ...provider,
+    }));
   }
 }
