@@ -19,4 +19,9 @@ gatewayRouter.post(
   gatewayController.handleRequest.bind(gatewayController),
 );
 
+gatewayRouter.post("/test", (req, res) => {
+  console.log("TEST ROUTE HIT");
+  res.json({ success: true });
+});
+
 export default gatewayRouter;

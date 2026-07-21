@@ -12,11 +12,25 @@ export default function GatewayPage() {
     console.log({ provider, prompt });
 
     try {
-      const res = await api.post("/gateway", {
+      const apiKey =
+        "pr_live_5e2e637dd2cec87ed8578e059e65b969bc556b53146491943b22e33b8e5566af";
+      console.log("API KEY:", apiKey);
+      console.log("REQUEST BODY:", {
         provider,
         prompt,
       });
-
+      const res = await api.post(
+        "/gateway",
+        {
+          provider,
+          prompt,
+        },
+        {
+          headers: {
+            "x-api-key": apiKey,
+          },
+        },
+      );
       console.log("Response:", res.data);
       setResponse(res.data.data.text);
       toast.success("Request sent successfully!");

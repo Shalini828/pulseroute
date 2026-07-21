@@ -40,8 +40,6 @@ export const authenticateApiKey = async (
     };
 
     next();
-
-    next();
   } catch {
     res.status(401).json({
       success: false,
