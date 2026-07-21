@@ -8,8 +8,13 @@ import useDashboard from "../../hooks/useDashboard";
 import { FolderKanban, Activity, Timer, ShieldCheck } from "lucide-react";
 
 export default function Dashboard() {
-  const { overview, providerAnalytics, dailyAnalytics, recentRequests } =
-    useDashboard();
+  const {
+    overview,
+    providerAnalytics,
+    dailyAnalytics,
+    recentRequests,
+    cacheStats,
+  } = useDashboard();
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -23,7 +28,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
           <StatCard
             title="Providers"
             value={overview?.activeProviders?.toString() ?? "0"}
@@ -53,6 +58,12 @@ export default function Dashboard() {
                 : "100%"
             }
             icon={ShieldCheck}
+          />
+
+          <StatCard
+            title="Cache Hit Rate"
+            value={`${cacheStats?.hitRate ?? 0}%`}
+            icon={Activity}
           />
         </div>
 

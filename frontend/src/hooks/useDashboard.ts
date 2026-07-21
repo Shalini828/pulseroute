@@ -4,6 +4,7 @@ import {
   getProviderAnalytics,
   getDailyAnalytics,
   getRecentRequests,
+  getCacheStats,
 } from "../services/dashboard.service";
 
 interface Metric {
@@ -37,6 +38,7 @@ const [overview, setOverview] = useState<any>(null);
 const [providerAnalytics, setProviderAnalytics] = useState<any[]>([]);
 const [dailyAnalytics, setDailyAnalytics] = useState<any[]>([]);
 const [recentRequests, setRecentRequests] = useState<any[]>([]);
+const [cacheStats, setCacheStats] = useState<any>(null);
 
 useEffect(() => {
   async function load() {
@@ -45,11 +47,13 @@ useEffect(() => {
 const providerData = await getProviderAnalytics();
 const dailyData = await getDailyAnalytics();
 const recentData = await getRecentRequests();
+const cacheData = await getCacheStats();
 
 setOverview(overviewData.data);
 setProviderAnalytics(providerData.data);
 setDailyAnalytics(dailyData.data);
 setRecentRequests(recentData.data);
+setCacheStats(cacheData.cache);
     } catch (err) {
       console.error(err);
     }
@@ -67,5 +71,7 @@ setRecentRequests(recentData.data);
   providerAnalytics,
   dailyAnalytics,
   recentRequests,
+  cacheStats,
 };
+
 }

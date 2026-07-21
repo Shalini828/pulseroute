@@ -53,6 +53,8 @@ export class FallbackService {
             ? error.message
             : "Unknown error";
 
+            console.error("Provider Error:", providerName, error);       
+
         continue;
       }
     }

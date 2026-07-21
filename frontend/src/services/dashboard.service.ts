@@ -39,3 +39,8 @@ export const getLogs = async () => {
   const res = await api.get("/logs");
   return res.data;
 };
+
+export const getCacheStats = async () => {
+  const res = await api.get("/cache/stats");
+  return res.data;
+};

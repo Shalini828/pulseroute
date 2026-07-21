@@ -8,6 +8,8 @@ import { logsService } from "../logs/logs.service";
 import { PrismaClient } from "../../generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { RoutingService } from "../routing/routing.service";
+import { cacheService } from "../cache/cache.service";
+import { rateLimitService } from "../rate-limit/rate-limit.service";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -31,11 +33,35 @@ export class GatewayService {
   private readonly logsService = logsService;
 
   public async processRequest(
-  request: GatewayRequest,
-  projectId: string,
-  userId?: string,
+    request: GatewayRequest,
+    projectId: string,
+    userId?: string,
   ): Promise<GatewayResponse> {
+
     const start = Date.now();
+
+    const clientId = userId ?? "anonymous";
+    const rateLimit = rateLimitService.check(clientId);
+
+    if (!rateLimit.allowed) {
+      throw new Error(
+        `Rate limit exceeded. Try again in ${rateLimit.retryAfter} seconds.`,
+      );
+    }
+    const cacheKey = request.prompt.trim().toLowerCase();
+
+    const cachedResponse = cacheService.get(cacheKey);
+
+    if (cachedResponse) {
+      return {
+        success: true,
+        provider: "cache",
+        data: {
+          text: cachedResponse,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
     let selectedProvider = "";
 
     try {
@@ -57,7 +83,8 @@ export class GatewayService {
       }
 
       selectedProvider = result.provider;
-
+      console.log("About to cache successful response");
+      cacheService.set(cacheKey, result.text ?? "");
       const responseTime = Date.now() - start;
 
       // Metrics
@@ -74,13 +101,13 @@ export class GatewayService {
       // Save history
       await prisma.gatewayRequest.create({
         data: {
-    prompt: request.prompt,
-    response: result.text ?? "",
-    provider: selectedProvider,
-    responseTime,
-    projectId,
-    userId,
-},
+          prompt: request.prompt,
+          response: result.text ?? "",
+          provider: selectedProvider,
+          responseTime,
+          projectId,
+          userId,
+        },
       });
 
       return {
