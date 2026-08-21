@@ -1,5 +1,11 @@
-import type { NextFunction, Request, Response } from "express";
+import type {
+  NextFunction,
+  Request,
+  Response,
+} from "express";
+
 import { apiKeyService } from "./apikey.service";
+import { errorResponse } from "../../shared/utils/apiResponse";
 
 declare global {
   namespace Express {
@@ -7,6 +13,7 @@ declare global {
       project?: {
         id: string;
         name: string;
+        userId: string;
       };
     }
   }
@@ -18,32 +25,59 @@ export const authenticateApiKey = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
+    // ============================================
+    // GET API KEY FROM HEADER
+    // ============================================
+
     const apiKey = req.header("x-api-key");
 
     if (!apiKey) {
-      res.status(401).json({
-        success: false,
-        message: "API key is required.",
-      });
+      errorResponse(
+        res,
+        "API key is required.",
+        401,
+      );
       return;
     }
 
-    const project = await apiKeyService.getProjectFromApiKey(apiKey);
+    // ============================================
+    // VALIDATE API KEY
+    // ============================================
+
+    const project =
+      await apiKeyService.getProjectFromApiKey(
+        apiKey,
+      );
+
+    // ============================================
+    // ATTACH PROJECT TO REQUEST
+    // ============================================
 
     req.project = {
       id: project.id,
       name: project.name,
+      userId: project.userId,
     };
+
+    // ============================================
+    // ATTACH USER TO REQUEST
+    // ============================================
 
     req.user = {
       userId: project.userId,
     };
 
     next();
-  } catch {
-    res.status(401).json({
-      success: false,
-      message: "Invalid API key.",
-    });
+  } catch (error) {
+    console.error(
+      "API key authentication failed:",
+      error,
+    );
+
+    errorResponse(
+      res,
+      "Invalid API key.",
+      401,
+    );
   }
 };

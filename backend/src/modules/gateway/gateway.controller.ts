@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { gatewayService } from "./gateway.service";
 import type { GatewayRequest, GatewayResponse } from "./gateway.types";
+import { projectService } from "../projects/project.service";
 
 export class GatewayController {
   private readonly service = gatewayService;
@@ -15,10 +16,8 @@ export class GatewayController {
       if (!project) {
         res.status(401).json({
           success: false,
-          provider: "",
-          data: {
-            text: "Invalid API key.",
-          },
+          jobId: "",
+          status: "FAILED",
           timestamp: new Date().toISOString(),
         });
         return;
@@ -47,12 +46,140 @@ export class GatewayController {
 
       res.status(statusCode).json({
         success: false,
-        provider: "",
-        data: {
-          text: message,
-        },
+        jobId: "",
+        status: "FAILED",
         timestamp: new Date().toISOString(),
       });
+    }
+  }
+
+  public async handlePlaygroundRequest(
+    req: Request<unknown, GatewayResponse, GatewayRequest>,
+    res: Response,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          jobId: "",
+          status: "FAILED",
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const projectId = req.body.projectId;
+
+      if (!projectId) {
+        res.status(400).json({
+          success: false,
+          jobId: "",
+          status: "FAILED",
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const gatewayResponse = await this.service.processRequest(
+        req.body,
+        projectId,
+        userId,
+      );
+
+      res.status(200).json(gatewayResponse);
+    } catch (error) {
+      console.error("Playground gateway error:", error);
+
+      if (res.headersSent) {
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        jobId: "",
+        status: "FAILED",
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  public async handleStreamRequest(
+    req: Request<unknown, unknown, GatewayRequest>,
+    res: Response,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+        return;
+      }
+
+      const projectId = req.body.projectId;
+
+      if (!projectId) {
+        res.status(400).json({
+          success: false,
+          message: "Project ID is required.",
+        });
+        return;
+      }
+
+      // Tell browser this is an SSE stream
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      // Send headers immediately
+      res.flushHeaders();
+
+      const result = await this.service.processStreamRequest(
+        req.body,
+        projectId,
+        userId,
+        (chunk: string) => {
+          res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+        },
+      );
+
+      // Send final information
+      res.write(
+        `data: ${JSON.stringify({
+          done: true,
+          provider: result.provider,
+          latency: result.latency,
+        })}\n\n`,
+      );
+
+      res.write("data: [DONE]\n\n");
+
+      res.end();
+    } catch (error) {
+      console.error("Streaming gateway error:", error);
+
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: "Streaming request failed.",
+        });
+        return;
+      }
+
+      res.write(
+        `data: ${JSON.stringify({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Streaming request failed.",
+        })}\n\n`,
+      );
+
+      res.end();
     }
   }
   public async getHistory(req: Request, res: Response): Promise<Response> {

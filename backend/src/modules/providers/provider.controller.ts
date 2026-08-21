@@ -143,7 +143,7 @@ export class ProviderController {
   _req: Request,
   res: Response,
 ): Promise<Response> {
-  const providers = await this.providerService.getAllProviders();
+  const providers = await this.providerService.getProviders();
 
   return res.status(200).json({
     success: true,

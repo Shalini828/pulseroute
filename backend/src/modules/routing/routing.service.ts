@@ -18,7 +18,7 @@ export class RoutingService {
 
     const providers = await prisma.provider.findMany({
       where: {
-        projectId,
+        // projectId,
         enabled: true,
       },
       orderBy: {

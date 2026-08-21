@@ -7,6 +7,14 @@ export interface ProviderInfo {
 export interface FallbackResult {
   provider: string;
   success: boolean;
+
   text?: string;
+
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+
   error?: string;
 }

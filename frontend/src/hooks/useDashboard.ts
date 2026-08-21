@@ -5,73 +5,78 @@ import {
   getDailyAnalytics,
   getRecentRequests,
   getCacheStats,
+  getSystemHealth,
+  getOperationalStats,
 } from "../services/dashboard.service";
 
-interface Metric {
-  provider: string;
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  averageResponseTime: number;
-  totalResponseTime: number;
-  status: string;
-}
-
-interface HistoryItem {
-  id: string;
-  provider: string;
-  prompt: string;
-  response: string;
-  responseTime: number;
-  createdAt: string;
-}
-
-interface Provider {
+interface ServiceHealth {
   name: string;
-  priority: number;
-  status: "healthy" | "degraded";
+  status: "healthy" | "warning" | "unhealthy";
+  responseTime?: number;
+  message?: string;
+}
+
+interface SystemHealth {
+  status: "healthy" | "degraded" | "unhealthy";
+  timestamp: string;
+  uptime: number;
+  services: ServiceHealth[];
 }
 
 export default function useDashboard() {
+  const [overview, setOverview] = useState<any>(null);
+  const [providerAnalytics, setProviderAnalytics] = useState<any[]>([]);
+  const [dailyAnalytics, setDailyAnalytics] = useState<any[]>([]);
+  const [recentRequests, setRecentRequests] = useState<any[]>([]);
+  const [cacheStats, setCacheStats] = useState<any>(null);
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
+  const [operationalStats, setOperationalStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const [overview, setOverview] = useState<any>(null);
-const [providerAnalytics, setProviderAnalytics] = useState<any[]>([]);
-const [dailyAnalytics, setDailyAnalytics] = useState<any[]>([]);
-const [recentRequests, setRecentRequests] = useState<any[]>([]);
-const [cacheStats, setCacheStats] = useState<any>(null);
+  useEffect(() => {
+    async function load() {
+      try {
+        setError(null);
+        const overviewData = await getOverview();
+        const providerData = await getProviderAnalytics();
+        const dailyData = await getDailyAnalytics();
+        const recentData = await getRecentRequests();
+        const cacheData = await getCacheStats();
+        const healthData = await getSystemHealth();
+        const opsData = await getOperationalStats();
 
-useEffect(() => {
-  async function load() {
-    try {
-  const overviewData = await getOverview();
-const providerData = await getProviderAnalytics();
-const dailyData = await getDailyAnalytics();
-const recentData = await getRecentRequests();
-const cacheData = await getCacheStats();
-
-setOverview(overviewData.data);
-setProviderAnalytics(providerData.data);
-setDailyAnalytics(dailyData.data);
-setRecentRequests(recentData.data);
-setCacheStats(cacheData.cache);
-    } catch (err) {
-      console.error(err);
+        setOverview(overviewData.data);
+        setProviderAnalytics(providerData.data);
+        setDailyAnalytics(dailyData.data);
+        setRecentRequests(recentData.data);
+        setCacheStats(cacheData.cache);
+        setSystemHealth(healthData.data);
+        setOperationalStats(opsData.data);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load dashboard data");
+        setLoading(false);
+      }
     }
-  }
 
-  load();
-  
-  const interval = setInterval(load, 5000);
+    load();
 
-  return () => clearInterval(interval);
-}, []);
+    const interval = setInterval(load, 10000);
 
- return {
-  overview,
-  providerAnalytics,
-  dailyAnalytics,
-  recentRequests,
-  cacheStats,
-};
+    return () => clearInterval(interval);
+  }, []);
 
+  return {
+    overview,
+    providerAnalytics,
+    dailyAnalytics,
+    recentRequests,
+    cacheStats,
+    systemHealth,
+    operationalStats,
+    loading,
+    error,
+  };
 }

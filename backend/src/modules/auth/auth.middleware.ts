@@ -28,6 +28,8 @@ export const authenticate = (
 ): void => {
   const authHeader = req.headers.authorization;
 
+  console.log("Authorization Header:", authHeader);
+
   if (!authHeader) {
     res.status(401).json({
       success: false,
@@ -38,31 +40,43 @@ export const authenticate = (
 
   const [scheme, token] = authHeader.split(" ");
 
+  console.log("Scheme:", scheme);
+  console.log("Token:", token);
+
   if (scheme !== "Bearer" || !token) {
     res.status(401).json({
       success: false,
-      message: "Invalid or expired token.",
+      message: "Invalid Authorization header.",
     });
     return;
   }
 
   try {
     const decoded = jwt.verify(
-  token,
-  process.env.JWT_SECRET || "development-secret",
-);
+      token,
+      process.env.JWT_SECRET || "development-secret",
+    );
+
+    console.log("Decoded JWT:", decoded);
 
     if (!isJwtPayload(decoded)) {
+      console.log("JWT payload format invalid.");
+
       res.status(401).json({
         success: false,
-        message: "Invalid or expired token.",
+        message: "Invalid token payload.",
       });
       return;
     }
 
     req.user = decoded;
+
+    console.log("Authenticated User:", req.user);
+
     next();
-  } catch {
+  } catch (error) {
+    console.error("JWT Verify Error:", error);
+
     res.status(401).json({
       success: false,
       message: "Invalid or expired token.",

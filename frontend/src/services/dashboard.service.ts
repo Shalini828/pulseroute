@@ -44,3 +44,50 @@ export const getCacheStats = async () => {
   const res = await api.get("/cache/stats");
   return res.data;
 };
+
+export const getQueueJobs = async () => {
+  const res = await api.get("/queue");
+  return res.data;
+};
+
+export const getAnalyticsOverview = async () => {
+  const res = await api.get("/analytics/overview");
+  return res.data;
+};
+
+export const getSystemHealth = async () => {
+  const res = await api.get("/system/health");
+  return res.data;
+};
+
+export const getOperationalStats = async () => {
+  const res = await api.get("/analytics/operational-stats");
+  return res.data;
+};
+
+// ================= API KEYS =================
+
+export const getApiKeys = (projectId: string) => {
+  return api.get(`/projects/${projectId}/apikeys`);
+};
+
+export const createApiKey = (
+  projectId: string,
+  data: {
+    name: string;
+  },
+) => {
+  return api.post(`/projects/${projectId}/apikeys`, data);
+};
+
+export const revokeApiKey = (projectId: string, apiKeyId: string) => {
+  return api.patch(`/projects/${projectId}/apikeys/${apiKeyId}/revoke`);
+};
+
+export const deleteApiKey = (projectId: string, apiKeyId: string) => {
+  return api.delete(`/projects/${projectId}/apikeys/${apiKeyId}`);
+};
+
+export const getProjects = () => {
+  return api.get("/projects");
+};

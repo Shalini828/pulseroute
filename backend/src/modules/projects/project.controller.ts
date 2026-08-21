@@ -29,10 +29,9 @@ export class ProjectController {
     });
   }
 
-  public async getProjects(
-    req: Request,
-    res: Response,
-  ): Promise<Response> {
+  public async getProjects(req: Request, res: Response): Promise<Response> {
+    console.log("Authorization Header:", req.headers.authorization);
+    console.log("Authenticated User:", req.user);
     if (!req.user?.userId) {
       return res.status(401).json({
         success: false,
@@ -40,9 +39,7 @@ export class ProjectController {
       });
     }
 
-    const projects = await projectService.getProjects(
-      req.user.userId,
-    );
+    const projects = await projectService.getProjects(req.user.userId);
 
     return res.status(200).json({
       success: true,
@@ -107,10 +104,7 @@ export class ProjectController {
       });
     }
 
-    await projectService.deleteProject(
-      req.params.id,
-      req.user.userId,
-    );
+    await projectService.deleteProject(req.params.id, req.user.userId);
 
     return res.status(200).json({
       success: true,

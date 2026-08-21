@@ -1,18 +1,29 @@
 import express from "express";
 import cors from "cors";
 import routes from "./routes";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger";
+import helmet from "helmet";
+import { errorHandler } from "./middlewares/errorHandler";
 
 const app = express();
+app.use(helmet());
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   })
 );
 
-app.use(express.json());
+app.use(express.json());app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec),
+);
+
 
 app.use("/", routes);
+app.use(errorHandler);
 
 export default app;

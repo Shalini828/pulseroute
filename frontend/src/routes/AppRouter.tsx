@@ -1,7 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 
+import Home from "../pages/Home/Home";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
+import ForgotPassword from "../pages/ForgotPassword/ForgotPassword";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import GatewayPage from "../pages/Gateway/Gateway";
@@ -11,14 +13,21 @@ import Providers from "../pages/Providers/Providers";
 import Analytics from "../pages/Analytics/Analytics";
 import Settings from "../pages/Settings/Settings";
 import NotFound from "../pages/NotFound/NotFound";
+import CreateProject from "../pages/CreateProject/CreateProject";
+import QueuePage from "../pages/queue/QueuePage";
+import Projects from "../pages/Projects/Projects";
+import EditProject from "../pages/Projects/EditProject";
+
+import ApiKeys from "../pages/ApiKeys/ApiKeys";
 
 import { Navigate } from "react-router-dom";
 
 export default function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       <Route path="/register" element={<Register />} />
 
@@ -79,6 +88,45 @@ export default function AppRouter() {
   element={
     <ProtectedRoute>
       <Settings />
+    </ProtectedRoute>
+  }
+/>
+
+
+<Route
+  path="/create-project"
+  element={
+    <ProtectedRoute>
+      <CreateProject />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/projects/edit/:id"
+  element={
+    <ProtectedRoute>
+    <EditProject />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/apikeys"
+  element={
+    <ProtectedRoute>
+      <ApiKeys />
+    </ProtectedRoute>
+  }
+/>
+
+<Route path="/queue" element={<QueuePage />} />
+
+<Route
+  path="/projects"
+  element={
+    <ProtectedRoute>
+      <Projects />
     </ProtectedRoute>
   }
 />

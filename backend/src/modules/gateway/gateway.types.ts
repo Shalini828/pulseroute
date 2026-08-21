@@ -1,14 +1,25 @@
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
 export interface GatewayRequest {
-  provider: string;
-  prompt: string;
-  projectId: string;
+  provider?: string;
+  projectId?: string;
+  endpoint: "/chat/completions";
+
+  payload: {
+    messages: ChatMessage[];
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    stream?: boolean;
+  };
 }
 
 export interface GatewayResponse {
   success: boolean;
-  provider: string;
-  data: {
-    text: string;
-  };
+  jobId: string;
+  status: string;
   timestamp: string;
 }

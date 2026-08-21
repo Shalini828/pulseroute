@@ -1,19 +1,11 @@
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../generated/prisma";
 import crypto from "crypto";
+import { prisma } from "../../lib/prisma";
+
 import {
   CreateApiKeyRequest,
   CreateApiKeyResponse,
   ApiKeyResponse,
 } from "./apikey.types";
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-const prisma = new PrismaClient({
-  adapter,
-});
 
 export class ApiKeyService {
   private generateApiKey(): string {

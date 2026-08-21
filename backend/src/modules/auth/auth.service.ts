@@ -1,11 +1,14 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import {
   RegisterRequest,
   LoginRequest,
   User,
   AuthResponse,
   JwtPayload,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
 } from "./auth.types";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
@@ -63,56 +66,146 @@ export class AuthService {
     });
   }
 
-public async login(request: LoginRequest): Promise<AuthResponse> {
-  console.log("Raw request:", request);
+  public async login(request: LoginRequest): Promise<AuthResponse> {
+    console.log("Raw request:", request);
 
-  const normalizedEmail = request.email.trim().toLowerCase();
+    const normalizedEmail = request.email.trim().toLowerCase();
 
-  console.log("Normalized:", JSON.stringify(normalizedEmail));
+    console.log("Normalized:", JSON.stringify(normalizedEmail));
 
-  const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany();
 
-  console.log(
-    users.map((u) => ({
-      email: JSON.stringify(u.email),
-      equal: u.email.trim().toLowerCase() === normalizedEmail,
-    })),
-  );
+    console.log(
+      users.map((u) => ({
+        email: JSON.stringify(u.email),
+        equal: u.email.trim().toLowerCase() === normalizedEmail,
+      })),
+    );
 
-  const user = users.find(
-    (u) => u.email.trim().toLowerCase() === normalizedEmail,
-  );
+    const user = users.find(
+      (u) => u.email.trim().toLowerCase() === normalizedEmail,
+    );
 
-  console.log("Matched user:", user);
+    console.log("Matched user:", user);
 
-  if (!user) {
-    throw new Error("Invalid email or password.");
+    if (!user) {
+      throw new Error("Invalid email or password.");
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      request.password,
+      user.password,
+    );
+
+    console.log("Password valid:", isPasswordValid);
+
+    if (!isPasswordValid) {
+      throw new Error("Invalid email or password.");
+    }
+
+    const token = this.generateToken(user);
+
+    return {
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    };
   }
 
-  const isPasswordValid = await bcrypt.compare(
-    request.password,
-    user.password,
-  );
+  public async forgotPassword(
+    request: ForgotPasswordRequest,
+  ): Promise<{ message: string; resetToken?: string }> {
+    const normalizedEmail = request.email.trim().toLowerCase();
 
-  console.log("Password valid:", isPasswordValid);
+    const user = await prisma.user.findUnique({
+      where: {
+        email: normalizedEmail,
+      },
+    });
 
-  if (!isPasswordValid) {
-    throw new Error("Invalid email or password.");
+    // Don't reveal whether an email exists
+    if (!user) {
+      return {
+        message:
+          "If an account with that email exists, a password reset link has been generated.",
+      };
+    }
+
+    // Generate secure random token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // Token expires in 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Remove any previous reset tokens for this user
+    await prisma.passwordResetToken.deleteMany({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    // Create new reset token
+    await prisma.passwordResetToken.create({
+      data: {
+        token: resetToken,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    console.log("🔐 Password reset token:", resetToken);
+
+    return {
+      message:
+        "If an account with that email exists, a password reset link has been generated.",
+      resetToken,
+    };
   }
 
-  const token = this.generateToken(user);
+  public async resetPassword(
+    request: ResetPasswordRequest,
+  ): Promise<{ message: string }> {
+    const { token, password } = request;
 
-  return {
-    success: true,
-    token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
-  };
-}
+    const resetToken = await prisma.passwordResetToken.findFirst({
+      where: {
+        token,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
 
+    if (!resetToken) {
+      throw new Error("Invalid or expired password reset token.");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: {
+        id: resetToken.userId,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    // Token can only be used once
+    await prisma.passwordResetToken.delete({
+      where: {
+        id: resetToken.id,
+      },
+    });
+
+    return {
+      message: "Password reset successfully.",
+    };
+  }
   public async getCurrentUser(userId: string): Promise<{
     id: string;
     name: string;

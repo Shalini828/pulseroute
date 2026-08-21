@@ -1,23 +1,23 @@
-/**
- * Request body for user registration.
- */
 export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
 }
 
-/**
- * Request body for user login.
- */
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
-/**
- * User model stored in memory.
- */
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -25,9 +25,6 @@ export interface User {
   password: string;
 }
 
-/**
- * Successful authentication response.
- */
 export interface AuthResponse {
   success: true;
   token: string;
@@ -38,9 +35,6 @@ export interface AuthResponse {
   };
 }
 
-/**
- * JWT payload.
- */
 export interface JwtPayload {
   userId: string;
   email: string;

@@ -1,45 +1,31 @@
+import { redisClient } from "../../redis/redis.client";
+
 class RateLimitService {
-  private requests = new Map<
-    string,
-    {
-      count: number;
-      resetTime: number;
-    }
-  >();
-
   private readonly LIMIT = 10;
-  private readonly WINDOW_MS = 60 * 1000;
+  private readonly WINDOW_SECONDS = 60;
 
-  check(clientId: string) {
-    const now = Date.now();
+  public async check(clientId: string) {
+    const key = `ratelimit:${clientId}`;
 
-    const client = this.requests.get(clientId);
+    const current = await redisClient.incr(key);
 
-    if (!client || now > client.resetTime) {
-      this.requests.set(clientId, {
-        count: 1,
-        resetTime: now + this.WINDOW_MS,
-      });
-
-      return {
-        allowed: true,
-        remaining: this.LIMIT - 1,
-      };
+    if (current === 1) {
+      await redisClient.expire(key, this.WINDOW_SECONDS);
     }
 
-    if (client.count >= this.LIMIT) {
+    if (current > this.LIMIT) {
+      const retryAfter = await redisClient.ttl(key);
+
       return {
         allowed: false,
         remaining: 0,
-        retryAfter: Math.ceil((client.resetTime - now) / 1000),
+        retryAfter,
       };
     }
 
-    client.count++;
-
     return {
       allowed: true,
-      remaining: this.LIMIT - client.count,
+      remaining: this.LIMIT - current,
     };
   }
 }

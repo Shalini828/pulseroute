@@ -22,4 +22,12 @@ export class ProviderFactory {
 
     return resolvedProvider;
   }
+
+  public getAllProviders(): BaseProvider[] {
+    return [...ProviderFactory.providers.values()];
+  }
+
+  public getProviderNames(): string[] {
+    return [...ProviderFactory.providers.keys()];
+  }
 }

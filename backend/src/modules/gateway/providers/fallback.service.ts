@@ -3,66 +3,89 @@ import type { FallbackResult } from "./provider.types";
 import { RetryService } from "../../retry/retry.service";
 import { CircuitBreakerService } from "./circuit-breaker.service";
 import { HealthMonitorService } from "./health-monitor.service";
+import { ChatMessage } from "./base.provider";
 
 export class FallbackService {
   private readonly retryService = new RetryService();
   private readonly circuitBreaker = new CircuitBreakerService();
   private readonly healthMonitor = new HealthMonitorService();
 
-  constructor(
-    private readonly providerFactory: ProviderFactory,
-  ) {}
+  constructor(private readonly providerFactory: ProviderFactory) {}
 
   public async tryProviders(
     providers: string[],
-    prompt: string,
+    messages: ChatMessage[],
   ): Promise<FallbackResult> {
+    if (providers.length === 0) {
+      return {
+        provider: "",
+        success: false,
+        error: "No providers available.",
+      };
+    }
+
+    const attemptedProviders = new Set<string>();
+    let lastError = "All providers failed.";
+
     for (const providerName of providers) {
-      if (!this.healthMonitor.isHealthy(providerName)) {
+      const normalizedProvider = providerName.trim().toLowerCase();
+
+      if (attemptedProviders.has(normalizedProvider)) {
         continue;
       }
 
-      if (this.circuitBreaker.isOpen(providerName)) {
+      attemptedProviders.add(normalizedProvider);
+
+      if (!this.healthMonitor.isHealthy(normalizedProvider)) {
+        console.warn(
+          `Skipping provider '${normalizedProvider}' because it is unhealthy.`,
+        );
+        continue;
+      }
+
+      if (this.circuitBreaker.isOpen(normalizedProvider)) {
+        console.warn(
+          `Skipping provider '${normalizedProvider}' because its circuit breaker is open.`,
+        );
         continue;
       }
 
       try {
         const provider =
-          this.providerFactory.getProvider(providerName);
+          this.providerFactory.getProvider(normalizedProvider);
 
-        const generated =
-          await this.retryService.execute(() =>
-            provider.generate({ prompt }),
-          );
+        const generated = await this.retryService.execute(() =>
+          provider.generate({
+            messages,
+          }),
+        );
 
-        this.circuitBreaker.recordSuccess(providerName);
-        this.healthMonitor.update(providerName, true);
+        this.circuitBreaker.recordSuccess(normalizedProvider);
+        this.healthMonitor.update(normalizedProvider, true);
 
         return {
-          provider: providerName,
+          provider: normalizedProvider,
           success: true,
           text: generated.text,
+          usage: generated.usage,
         };
       } catch (error) {
-        this.circuitBreaker.recordFailure(providerName);
-        this.healthMonitor.update(providerName, false);
+        this.circuitBreaker.recordFailure(normalizedProvider);
+        this.healthMonitor.update(normalizedProvider, false);
 
-        // Reserved for future logging
-        const _message =
-          error instanceof Error
-            ? error.message
-            : "Unknown error";
+        lastError =
+          error instanceof Error ? error.message : "Unknown error";
 
-            console.error("Provider Error:", providerName, error);       
-
-        continue;
+        console.error(
+          `Provider '${normalizedProvider}' failed: ${lastError}`,
+        );
       }
     }
 
     return {
       provider: "",
       success: false,
-      error: "All providers failed.",
+      error: lastError,
     };
   }
 }

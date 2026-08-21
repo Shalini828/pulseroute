@@ -1,52 +1,44 @@
-export class CacheService {
-  private readonly cache = new Map<
-    string,
-    {
-      response: string;
-      expiresAt: number;
-    }
-  >();
+import { redisClient } from "../../redis/redis.client";
 
-  private readonly TTL = 5 * 60 * 1000; // 5 minutes
+export class CacheService {
+  private readonly TTL = 300; // 5 minutes (seconds)
+
   private cacheHits = 0;
   private cacheMisses = 0;
-  public get(key: string): string | null {
-    const cached = this.cache.get(key);
+
+  public async get(key: string): Promise<string | null> {
+    const cached = await redisClient.get(key);
 
     if (!cached) {
       this.cacheMisses++;
       return null;
     }
 
-    if (Date.now() > cached.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-
     this.cacheHits++;
-
-    return cached.response;
+    return cached;
   }
 
-  public set(key: string, response: string): void {
-    console.log("Cache SET:", key);
-    this.cache.set(key, {
-      response,
-      expiresAt: Date.now() + this.TTL,
+  public async set(key: string, response: string): Promise<void> {
+    console.log("Redis SET:", key);
+
+    await redisClient.set(key, response, {
+      EX: this.TTL,
     });
   }
 
-  public getStats() {
-  return {
-    hits: this.cacheHits,
-    misses: this.cacheMisses,
-    hitRate:
-      this.cacheHits + this.cacheMisses === 0
-        ? 0
-        : (this.cacheHits / (this.cacheHits + this.cacheMisses)) * 100,
-    size: this.cache.size,
-  };
-}
+  public async getStats() {
+    const size = await redisClient.dbSize();
+
+    return {
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
+      hitRate:
+        this.cacheHits + this.cacheMisses === 0
+          ? 0
+          : (this.cacheHits / (this.cacheHits + this.cacheMisses)) * 100,
+      size,
+    };
+  }
 }
 
 export const cacheService = new CacheService();
